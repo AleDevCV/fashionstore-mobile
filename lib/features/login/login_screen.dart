@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import '../auth/screens/recuperar_password_screen.dart';
 import '../catalogo/catalogo_screen.dart';
 
 /// Pantalla de inicio de sesión (CU01).
@@ -130,6 +131,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       validator: (v) =>
                           (v == null || v.isEmpty) ? 'Ingrese su contraseña.' : null,
                       onFieldSubmitted: (_) => _iniciarSesion(),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RecuperarPasswordScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text('¿Olvidó su contraseña?'),
+                      ),
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 16),

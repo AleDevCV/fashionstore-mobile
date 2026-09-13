@@ -2,8 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'config.dart';
-
 /// Excepción con el mensaje ya traducido del backend (equivalente móvil del
 /// `api-error.ts` del frontend Angular).
 class ApiException implements Exception {
