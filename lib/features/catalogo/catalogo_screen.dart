@@ -8,7 +8,13 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../services/auth_service.dart';
 import '../../services/catalogo_service.dart';
+import '../compras/compras_screen.dart';
 import '../detalle/prenda_detalle_screen.dart';
+import '../ia/asistente_moda_screen.dart';
+import '../inventario_monitoreo/estado_inventario_screen.dart';
+import '../login/login_screen.dart';
+import '../movimientos/movimientos_screen.dart';
+import '../proveedores/proveedores_screen.dart';
 
 /// Vitrina pública del catálogo (CU14).
 ///
@@ -177,7 +183,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                     Text('Filtros', style: Theme.of(ctx).textTheme.titleLarge),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int?>(
-                      value: tmpCategoria,
+                      initialValue: tmpCategoria,
                       decoration: const InputDecoration(labelText: 'Categoría'),
                       items: [
                         const DropdownMenuItem<int?>(value: null, child: Text('Todas')),
@@ -192,7 +198,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String?>(
-                      value: tmpGenero,
+                      initialValue: tmpGenero,
                       decoration: const InputDecoration(labelText: 'Género'),
                       items: [
                         const DropdownMenuItem<String?>(value: null, child: Text('Todos')),
@@ -204,7 +210,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int?>(
-                      value: tmpTalla,
+                      initialValue: tmpTalla,
                       decoration: const InputDecoration(labelText: 'Talla'),
                       items: [
                         const DropdownMenuItem<int?>(value: null, child: Text('Todas')),
@@ -219,7 +225,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int?>(
-                      value: tmpColor,
+                      initialValue: tmpColor,
                       decoration: const InputDecoration(labelText: 'Color'),
                       items: [
                         const DropdownMenuItem<int?>(value: null, child: Text('Todos')),
@@ -317,6 +323,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
             ),
         ],
       ),
+      drawer: _construirDrawer(context),
       body: Column(
         children: [
           Padding(
@@ -474,6 +481,185 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
             child: Text(mensaje, style: const TextStyle(color: fsDanger, fontSize: 13)),
           ),
           TextButton(onPressed: _reintentar, child: const Text('Reintentar')),
+        ],
+      ),
+    );
+  }
+
+  Widget _construirDrawer(BuildContext context) {
+    final autenticado = _auth.autenticado;
+    final nombre = _auth.nombreUsuario ?? (_auth.correoUsuario ?? 'Invitado');
+    final rol = _auth.rol ?? 'Cliente';
+
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: fsInk,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Text(
+                  'FashionStore',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 3,
+                    color: fsSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  nombre,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: fsSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                if (autenticado) ...[
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: fsGoldWash,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      rol.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: fsGoldDeep,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  const Text(
+                    'Modo Invitado',
+                    style: TextStyle(fontSize: 12, color: fsInkMuted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.checkroom_outlined, color: fsInk),
+            title: const Text('Catálogo de Prendas'),
+            onTap: () => Navigator.of(context).pop(),
+          ),
+          if (autenticado) ...[
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'INTELIGENCIA ARTIFICIAL',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: fsInkMuted,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome, color: fsInk),
+              title: const Text('Asistente de Moda IA'),
+              subtitle: const Text('Recomendador de outfits con Gemini (CU22)'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AsistenteModa()),
+                );
+              },
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'GESTIÓN DE ALMACÉN',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: fsInkMuted,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.inventory_2_outlined, color: fsInk),
+              title: const Text('Movimientos de Inventario'),
+              subtitle: const Text('Registro táctil y kardex físico (CU11)'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MovimientosScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.business_outlined, color: fsInk),
+              title: const Text('Directorio de Proveedores'),
+              subtitle: const Text('Búsqueda y consulta comercial (CU12)'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProveedoresScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long_outlined, color: fsInk),
+              title: const Text('Recepción de Compras'),
+              subtitle: const Text('Historial de lotes con 13% IVA (CU13)'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ComprasScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.analytics_outlined, color: fsInk),
+              title: const Text('Estado de Inventario'),
+              subtitle: const Text('Monitoreo multisucursal y existencias (CU10)'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EstadoInventarioScreen()),
+                );
+              },
+            ),
+          ],
+          const Divider(color: fsBorder),
+          if (autenticado)
+            ListTile(
+              leading: const Icon(Icons.logout_outlined, color: fsDanger),
+              title:
+                  const Text('Cerrar sesión', style: TextStyle(color: fsDanger)),
+              onTap: () {
+                Navigator.of(context).pop();
+                _cerrarSesion();
+              },
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.login_outlined, color: fsInk),
+              title: const Text('Iniciar sesión'),
+              subtitle: const Text('Acceso para personal de tienda/almacén'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+            ),
         ],
       ),
     );

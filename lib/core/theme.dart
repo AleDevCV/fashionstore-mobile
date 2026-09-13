@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 /// Tokens de marca de FashionStore, replicados del sistema de diseño del
 /// frontend Angular para mantener coherencia visual en la app móvil.
-library;
 
 const Color fsInk = Color(0xFF111111);
 const Color fsInkSoft = Color(0xFF565656);
