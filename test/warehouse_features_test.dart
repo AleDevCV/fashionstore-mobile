@@ -516,6 +516,12 @@ void main() {
       expect(find.text('GESTIÓN DE ALMACÉN'), findsOneWidget);
       expect(find.text('Movimientos de Inventario'), findsOneWidget);
       expect(find.text('Directorio de Proveedores'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Recepción de Compras'),
+        50,
+        scrollable: find.descendant(of: find.byType(Drawer), matching: find.byType(Scrollable)),
+      );
       expect(find.text('Recepción de Compras'), findsOneWidget);
 
       await tester.scrollUntilVisible(

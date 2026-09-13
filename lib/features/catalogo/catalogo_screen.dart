@@ -10,6 +10,8 @@ import '../../services/auth_service.dart';
 import '../../services/catalogo_service.dart';
 import '../compras/compras_screen.dart';
 import '../detalle/prenda_detalle_screen.dart';
+import '../ia/asistente_moda_screen.dart';
+import '../inventario_monitoreo/estado_inventario_screen.dart';
 import '../login/login_screen.dart';
 import '../movimientos/movimientos_screen.dart';
 import '../proveedores/proveedores_screen.dart';
@@ -558,6 +560,29 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
+                'INTELIGENCIA ARTIFICIAL',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: fsInkMuted,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome, color: fsInk),
+              title: const Text('Asistente de Moda IA'),
+              subtitle: const Text('Recomendador de outfits con Gemini (CU22)'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AsistenteModa()),
+                );
+              },
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
                 'GESTIÓN DE ALMACÉN',
                 style: TextStyle(
                   fontSize: 11,
@@ -597,6 +622,17 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ComprasScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.analytics_outlined, color: fsInk),
+              title: const Text('Estado de Inventario'),
+              subtitle: const Text('Monitoreo multisucursal y existencias (CU10)'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EstadoInventarioScreen()),
                 );
               },
             ),

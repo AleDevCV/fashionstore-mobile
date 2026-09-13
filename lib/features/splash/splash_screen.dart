@@ -28,12 +28,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'FashionStore',
               style: TextStyle(
                 fontSize: 28,
@@ -42,8 +42,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: fsInk,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Catálogo y disponibilidad',
               style: TextStyle(
                 fontSize: 12,
@@ -51,8 +51,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: fsInkMuted,
               ),
             ),
-            const SizedBox(height: 28),
-            const SizedBox(
+            SizedBox(height: 28),
+            SizedBox(
               width: 24,
               height: 24,
               child: CircularProgressIndicator(strokeWidth: 2),
