@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
 import '../../core/models/catalogo_models.dart';
@@ -9,6 +14,8 @@ import '../../services/auth_service.dart';
 import '../../services/catalogo_service.dart';
 import '../../services/venta_service.dart';
 import '../ar/vestidor_virtual_screen.dart';
+import '../ia/models/tryon_model.dart';
+import '../ia/services/ia_service.dart';
 import '../reservas/ticket_reserva_screen.dart';
 
 /// Ficha de una prenda con su disponibilidad por sucursal (CU14).
@@ -17,8 +24,15 @@ import '../reservas/ticket_reserva_screen.dart';
 /// sucursal para cada combinación de talla y color.
 class PrendaDetalleScreen extends StatefulWidget {
   final int idPrenda;
+  final ImagePicker? imagePicker;
+  final IAService? iaService;
 
-  const PrendaDetalleScreen({super.key, required this.idPrenda});
+  const PrendaDetalleScreen({
+    super.key,
+    required this.idPrenda,
+    this.imagePicker,
+    this.iaService,
+  });
 
   @override
   State<PrendaDetalleScreen> createState() => _PrendaDetalleScreenState();
@@ -26,6 +40,8 @@ class PrendaDetalleScreen extends StatefulWidget {
 
 class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
   final CatalogoService _servicio = CatalogoService();
+  late final ImagePicker _picker = widget.imagePicker ?? ImagePicker();
+  late final IAService _iaService = widget.iaService ?? IAService();
 
   PrendaCatalogo? _prenda;
   bool _cargando = true;
@@ -133,6 +149,25 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
                 ),
               ],
               const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  key: const Key('btn_tryon_fotorealista'),
+                  icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+                  label: const Text(
+                    'Generar Try-On Fotorealista (IA)',
+                    style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.3),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: fsInk,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () => _mostrarSelectorOrigenFoto(p),
+                ),
+              ),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -432,6 +467,632 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
         Text(etiqueta, style: const TextStyle(fontSize: 12, color: fsInkSoft)),
         Text(valor, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       ],
+    );
+  }
+
+  // =========================================================================
+  // FLUJO DE VESTIDOR VIRTUAL FOTOREALISTA CON IA (FASE 2)
+  // =========================================================================
+
+  void _mostrarSelectorOrigenFoto(PrendaCatalogo prenda) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: fsSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.auto_awesome, color: fsGoldDeep, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Probador Fotorealista (IA)',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    key: const Key('btn_cerrar_selector_foto'),
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Captura una fotografía de tu torso con buena luz o elígela de tu galería para probarte la prenda.',
+                style: TextStyle(color: fsInkSoft, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                key: const Key('tile_origen_camara'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: fsGoldWash,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.camera_alt_outlined, color: fsGoldDeep),
+                ),
+                title: const Text('Tomar fotografía', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Usa la cámara del dispositivo'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _procesarCaptura(prenda, ImageSource.camera);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                key: const Key('tile_origen_galeria'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: fsSurfaceAlt,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.photo_library_outlined, color: fsInk),
+                ),
+                title: const Text('Elegir de la galería', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Selecciona una imagen guardada'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _procesarCaptura(prenda, ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _procesarCaptura(PrendaCatalogo prenda, ImageSource origen) async {
+    try {
+      final XFile? foto = await _picker.pickImage(
+        source: origen,
+        maxWidth: 1200,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+
+      if (foto == null) return;
+      if (!mounted) return;
+
+      final bytesOriginales = await foto.readAsBytes();
+      final fotoBase64 = base64Encode(bytesOriginales);
+      final fotoUsuarioDataUri = 'data:image/jpeg;base64,$fotoBase64';
+
+      if (!mounted) return;
+
+      // Diálogo de progreso multi-etapa
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const DialogoProgresoTryOn(),
+      );
+
+      try {
+        final respuesta = await _iaService.generarTryOn(
+          TryOnPeticion(
+            idPrenda: prenda.idPrenda,
+            fotoUsuario: fotoUsuarioDataUri,
+            usarIaGenerativa: true,
+          ),
+        );
+
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop();
+
+        final raw = respuesta.imagenResultado.contains(',')
+            ? respuesta.imagenResultado.split(',').last
+            : respuesta.imagenResultado;
+        final bytesResultado = base64Decode(raw.trim());
+
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          useSafeArea: false,
+          builder: (_) => TryOnVisorModal(
+            imagenBytes: bytesResultado,
+            fotoOriginalBytes: bytesOriginales,
+            prenda: prenda,
+            tiempoMs: respuesta.tiempoProcesamientoMs,
+            mensaje: respuesta.mensaje,
+            onReservar: _iniciarReservaDesdeTryOn,
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop();
+
+        final mensajeError = e is ApiException
+            ? e.message
+            : 'Error al procesar el Try-On con IA: $e';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensajeError),
+            backgroundColor: fsDanger,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al capturar la imagen: $e'),
+          backgroundColor: fsDanger,
+        ),
+      );
+    }
+  }
+
+  void _iniciarReservaDesdeTryOn() {
+    final p = _prenda;
+    if (p == null) return;
+
+    VarianteCatalogo? varianteConStock;
+    StockSucursal? sucursalConStock;
+
+    for (final v in p.variantes) {
+      for (final s in v.disponibilidad) {
+        if (s.stock > 0) {
+          varianteConStock = v;
+          sucursalConStock = s;
+          break;
+        }
+      }
+      if (varianteConStock != null) break;
+    }
+
+    if (varianteConStock != null && sucursalConStock != null) {
+      _confirmarReservaProbador(varianteConStock, sucursalConStock);
+    } else if (p.variantes.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay stock disponible en tiendas físicas para esta prenda actualmente.'),
+          backgroundColor: fsInk,
+        ),
+      );
+    }
+  }
+}
+
+// =============================================================================
+// COMPONENTES AUXILIARES DEL TRY-ON FOTOREALISTA
+// =============================================================================
+
+/// Diálogo con fases dinámicas que informan el avance del pipeline fotorealista.
+class DialogoProgresoTryOn extends StatefulWidget {
+  const DialogoProgresoTryOn({super.key});
+
+  @override
+  State<DialogoProgresoTryOn> createState() => _DialogoProgresoTryOnState();
+}
+
+class _DialogoProgresoTryOnState extends State<DialogoProgresoTryOn> {
+  static const List<String> _fases = [
+    'Detectando silueta...',
+    'Adaptando tejido y caída...',
+    'Componiendo sombras realistas...',
+    'Refinando detalles y balance de luz...',
+  ];
+
+  int _faseIndex = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 1000), (_) {
+      if (!mounted) return;
+      setState(() {
+        _faseIndex = (_faseIndex + 1) % _fases.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: fsSurface,
+        elevation: 8,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: fsGoldWash,
+                  shape: BoxShape.circle,
+                ),
+                child: const SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(fsGoldDeep),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Vestidor Fotorealista con IA',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: fsInk,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 12),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Text(
+                  _fases[_faseIndex],
+                  key: ValueKey<int>(_faseIndex),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: fsEmerald,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Ajuste afín y balance de iluminación en curso...',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: fsInkMuted),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Modos de visualización del visor interactivo Try-On.
+enum ModoVistaTryOn { tryOn, original, comparativaLadoALado }
+
+/// Visor modal interactivo de alta resolución con soporte nativo de InteractiveViewer
+/// para zoom táctil, paneo fluido y comparativa antes/después.
+class TryOnVisorModal extends StatefulWidget {
+  final Uint8List imagenBytes;
+  final Uint8List? fotoOriginalBytes;
+  final PrendaCatalogo prenda;
+  final double tiempoMs;
+  final String? mensaje;
+  final VoidCallback? onReservar;
+
+  const TryOnVisorModal({
+    super.key,
+    required this.imagenBytes,
+    this.fotoOriginalBytes,
+    required this.prenda,
+    required this.tiempoMs,
+    this.mensaje,
+    this.onReservar,
+  });
+
+  @override
+  State<TryOnVisorModal> createState() => _TryOnVisorModalState();
+}
+
+class _TryOnVisorModalState extends State<TryOnVisorModal> {
+  final TransformationController _transformController = TransformationController();
+  ModoVistaTryOn _modoVista = ModoVistaTryOn.tryOn;
+
+  void _resetZoom() {
+    _transformController.value = Matrix4.identity();
+  }
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.prenda.nombre,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                widget.mensaje ?? 'Vestidor Fotorealista (IA)',
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ],
+          ),
+          actions: [
+            if (widget.fotoOriginalBytes != null) ...[
+              IconButton(
+                key: const Key('btn_toggle_vista'),
+                tooltip: _modoVista == ModoVistaTryOn.tryOn
+                    ? 'Ver foto original'
+                    : 'Ver resultado Try-On',
+                icon: Icon(
+                  _modoVista == ModoVistaTryOn.tryOn
+                      ? Icons.person_outline
+                      : Icons.auto_awesome,
+                  color: fsGold,
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (_modoVista == ModoVistaTryOn.tryOn) {
+                      _modoVista = ModoVistaTryOn.original;
+                    } else {
+                      _modoVista = ModoVistaTryOn.tryOn;
+                    }
+                  });
+                },
+              ),
+              IconButton(
+                key: const Key('btn_vista_lado_a_lado'),
+                tooltip: _modoVista == ModoVistaTryOn.comparativaLadoALado
+                    ? 'Vista individual'
+                    : 'Comparativa lado a lado',
+                icon: Icon(
+                  _modoVista == ModoVistaTryOn.comparativaLadoALado
+                      ? Icons.fullscreen
+                      : Icons.compare,
+                  color: _modoVista == ModoVistaTryOn.comparativaLadoALado
+                      ? fsGold
+                      : Colors.white70,
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (_modoVista == ModoVistaTryOn.comparativaLadoALado) {
+                      _modoVista = ModoVistaTryOn.tryOn;
+                    } else {
+                      _modoVista = ModoVistaTryOn.comparativaLadoALado;
+                    }
+                  });
+                },
+              ),
+            ],
+            IconButton(
+              key: const Key('btn_reset_zoom'),
+              icon: const Icon(Icons.zoom_out_map, color: Colors.white70),
+              tooltip: 'Restablecer zoom',
+              onPressed: _resetZoom,
+            ),
+            IconButton(
+              key: const Key('btn_cerrar_visor'),
+              icon: const Icon(Icons.close, color: Colors.white),
+              tooltip: 'Cerrar',
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: _construirLienzo(),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(180),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: fsEmerald.withAlpha(180)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.bolt, color: fsEmerald, size: 14),
+                    const SizedBox(width: 5),
+                    Text(
+                      'IA Generativa: ${(widget.tiempoMs / 1000).toStringAsFixed(2)}s',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (widget.fotoOriginalBytes != null &&
+                _modoVista != ModoVistaTryOn.comparativaLadoALado)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(180),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: fsGold.withAlpha(180)),
+                  ),
+                  child: Text(
+                    _modoVista == ModoVistaTryOn.tryOn ? 'Try-On IA' : 'Original',
+                    style: const TextStyle(
+                      color: fsGold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withAlpha(220),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        key: const Key('btn_reservar_desde_tryon'),
+                        icon: const Icon(Icons.event_seat_outlined, size: 18),
+                        label: const Text('Reservar en Tienda (CU16)'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: fsGold,
+                          foregroundColor: fsInk,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          widget.onReservar?.call();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _construirLienzo() {
+    if (_modoVista == ModoVistaTryOn.comparativaLadoALado &&
+        widget.fotoOriginalBytes != null) {
+      return Row(
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                Container(
+                  color: Colors.black54,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  width: double.infinity,
+                  child: const Center(
+                    child: Text(
+                      'Foto Original',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.5,
+                    child: Center(
+                      child: Image.memory(
+                        widget.fotoOriginalBytes!,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(width: 1.5, color: fsBorder.withAlpha(100)),
+          Expanded(
+            child: Column(
+              children: [
+                Container(
+                  color: Colors.black54,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  width: double.infinity,
+                  child: const Center(
+                    child: Text(
+                      'Try-On Fotorealista (IA)',
+                      style: TextStyle(
+                        color: fsGold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InteractiveViewer(
+                    transformationController: _transformController,
+                    minScale: 0.5,
+                    maxScale: 4.5,
+                    child: Center(
+                      child: Image.memory(
+                        widget.imagenBytes,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final Uint8List imagenActual = (_modoVista == ModoVistaTryOn.original &&
+            widget.fotoOriginalBytes != null)
+        ? widget.fotoOriginalBytes!
+        : widget.imagenBytes;
+
+    return InteractiveViewer(
+      transformationController: _transformController,
+      minScale: 0.5,
+      maxScale: 5.0,
+      boundaryMargin: const EdgeInsets.all(32),
+      child: Center(
+        child: Image.memory(
+          imagenActual,
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }
