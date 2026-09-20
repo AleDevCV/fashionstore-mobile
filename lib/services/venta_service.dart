@@ -56,4 +56,26 @@ class VentaService {
     final res = await _api.get('/api/comprobantes/venta/$idVenta');
     return ComprobanteRespuesta.fromJson(res as Map<String, dynamic>);
   }
+
+  // ── RESERVAS DE PROBADOR FÍSICO (CU16) ────────────────────────────────────
+
+  /// Crea una reserva de prendas para probar físicamente en una sucursal.
+  Future<TicketReservaRespuesta> crearReservaProbador(ReservaProbadorPeticion peticion) async {
+    final res = await _api.post('/api/ventas/reservas-probador', body: peticion.toJson());
+    return TicketReservaRespuesta.fromJson(res as Map<String, dynamic>);
+  }
+
+  /// Obtiene los datos del ticket con QR dinámico por código o ID.
+  Future<TicketReservaRespuesta> obtenerTicketReserva(String codigoOId) async {
+    final res = await _api.get('/api/ventas/reservas-probador/$codigoOId');
+    return TicketReservaRespuesta.fromJson(res as Map<String, dynamic>);
+  }
+
+  /// Lista el historial de reservas de probador del cliente.
+  Future<List<ReservaRespuesta>> listarMisReservas(int idCliente) async {
+    final res = await _api.get('/api/ventas/mis-reservas/$idCliente');
+    final lista = res as List<dynamic>? ?? [];
+    return lista.map((e) => ReservaRespuesta.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }
+

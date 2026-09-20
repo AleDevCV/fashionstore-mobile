@@ -229,3 +229,115 @@ class ComprobanteRespuesta {
     );
   }
 }
+
+/// Petición para crear una reserva de prendas para probar en sucursal (CU16).
+class ReservaProbadorPeticion {
+  final int idCliente;
+  final int idSucursal;
+  final int horasVigencia;
+  final List<DetalleReservaItem> items;
+
+  ReservaProbadorPeticion({
+    required this.idCliente,
+    required this.idSucursal,
+    this.horasVigencia = 2,
+    required this.items,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id_cliente': idCliente,
+      'id_sucursal': idSucursal,
+      'horas_vigencia': horasVigencia,
+      'items': items.map((i) => i.toJson()).toList(),
+    };
+  }
+}
+
+/// Ítem desglosado dentro del ticket de reserva.
+class DetalleTicketItem {
+  final int idVariantePrenda;
+  final String? skuVariante;
+  final String prendaNombre;
+  final String? talla;
+  final String? color;
+  final int cantidad;
+  final double precioUnitario;
+  final double subtotal;
+
+  DetalleTicketItem({
+    required this.idVariantePrenda,
+    this.skuVariante,
+    required this.prendaNombre,
+    this.talla,
+    this.color,
+    required this.cantidad,
+    required this.precioUnitario,
+    required this.subtotal,
+  });
+
+  factory DetalleTicketItem.fromJson(Map<String, dynamic> json) {
+    return DetalleTicketItem(
+      idVariantePrenda: json['id_variante_prenda'] as int,
+      skuVariante: json['sku_variante'] as String?,
+      prendaNombre: json['prenda_nombre'] as String? ?? 'Prenda',
+      talla: json['talla'] as String?,
+      color: json['color'] as String?,
+      cantidad: (json['cantidad'] as num).toInt(),
+      precioUnitario: (json['precio_unitario'] as num).toDouble(),
+      subtotal: (json['subtotal'] as num).toDouble(),
+    );
+  }
+}
+
+/// Ticket digital omnicanal con código QR para atención en tienda (CU16, CU17).
+class TicketReservaRespuesta {
+  final int idReserva;
+  final String codigoTicket;
+  final String qrBase64;
+  final int idCliente;
+  final String? clienteNombre;
+  final int idSucursal;
+  final String? sucursalNombre;
+  final String fechaReserva;
+  final String fechaLimite;
+  final String estado;
+  final double total;
+  final List<DetalleTicketItem> items;
+
+  TicketReservaRespuesta({
+    required this.idReserva,
+    required this.codigoTicket,
+    required this.qrBase64,
+    required this.idCliente,
+    this.clienteNombre,
+    required this.idSucursal,
+    this.sucursalNombre,
+    required this.fechaReserva,
+    required this.fechaLimite,
+    required this.estado,
+    required this.total,
+    required this.items,
+  });
+
+  factory TicketReservaRespuesta.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List<dynamic>? ?? [];
+    return TicketReservaRespuesta(
+      idReserva: json['id_reserva'] as int,
+      codigoTicket: json['codigo_ticket'] as String? ?? 'TKT-${json['id_reserva']}',
+      qrBase64: json['qr_base64'] as String? ?? '',
+      idCliente: json['id_cliente'] as int,
+      clienteNombre: json['cliente_nombre'] as String?,
+      idSucursal: json['id_sucursal'] as int,
+      sucursalNombre: json['sucursal_nombre'] as String?,
+      fechaReserva: json['fecha_reserva'] as String,
+      fechaLimite: json['fecha_limite'] as String,
+      estado: json['estado'] as String,
+      total: (json['total'] as num).toDouble(),
+      items: rawItems
+          .map((e) => DetalleTicketItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
