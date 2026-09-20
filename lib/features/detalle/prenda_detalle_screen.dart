@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/models/catalogo_models.dart';
+import '../../core/models/venta_models.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../services/auth_service.dart';
 import '../../services/catalogo_service.dart';
+import '../../services/venta_service.dart';
+import '../reservas/ticket_reserva_screen.dart';
 
 /// Ficha de una prenda con su disponibilidad por sucursal (CU14).
 ///
@@ -191,14 +195,16 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
                 style: TextStyle(color: fsInkMuted, fontSize: 13),
               )
             else
-              ...v.disponibilidad.map(_filaSucursal),
+              ...v.disponibilidad.map((s) => _filaSucursal(v, s)),
           ],
         ),
       ),
     );
   }
 
-  Widget _filaSucursal(StockSucursal s) {
+  Widget _filaSucursal(VarianteCatalogo v, StockSucursal s) {
+    final tieneStock = s.stock > 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -215,12 +221,192 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
               ],
             ),
           ),
-          Text(
-            '${s.stock} u. disponibles',
-            style: const TextStyle(color: fsEmerald, fontWeight: FontWeight.w600, fontSize: 13),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${s.stock} u. disponibles',
+                style: TextStyle(
+                  color: tieneStock ? fsEmerald : fsInkMuted,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+              if (tieneStock) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 26,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.door_front_door_outlined, size: 12),
+                    label: const Text('Probar en tienda', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: fsInk,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    ),
+                    onPressed: () => _confirmarReservaProbador(v, s),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  void _confirmarReservaProbador(VarianteCatalogo v, StockSucursal s) {
+    final p = _prenda;
+    if (p == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        bool enviando = false;
+        String? errorModal;
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 24,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Reserva para Probador (CU16)',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Se separará 1 unidad de "${p.nombre}" en la sucursal seleccionada por 2 horas para que te la pruebes físicamente.',
+                    style: const TextStyle(color: fsInkSoft, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: fsSurfaceAlt,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: fsBorder),
+                    ),
+                    child: Column(
+                      children: [
+                        _filaDetalleModal('Prenda:', p.nombre),
+                        const SizedBox(height: 4),
+                        _filaDetalleModal('Talla / Color:', '${v.talla ?? 'U'} / ${v.color ?? 'U'}'),
+                        const SizedBox(height: 4),
+                        _filaDetalleModal('Sucursal:', s.sucursal),
+                        const SizedBox(height: 4),
+                        _filaDetalleModal('Precio:', formatearPrecio(v.precio)),
+                        const SizedBox(height: 4),
+                        _filaDetalleModal('Vigencia:', '2 horas tras confirmar'),
+                      ],
+                    ),
+                  ),
+                  if (errorModal != null) ...[
+                    const SizedBox(height: 12),
+                    Text(errorModal!, style: const TextStyle(color: fsDanger, fontSize: 12)),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 46,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: fsInk,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: enviando
+                          ? null
+                          : () async {
+                              setModalState(() {
+                                enviando = true;
+                                errorModal = null;
+                              });
+
+                              try {
+                                final claims = AuthService.instance.tokenClaims;
+                                int idCliente = 61;
+                                if (claims != null) {
+                                  if (claims['id_cliente'] != null) {
+                                    idCliente = (claims['id_cliente'] as num).toInt();
+                                  } else if (claims['id_usuario'] != null) {
+                                    idCliente = (claims['id_usuario'] as num).toInt();
+                                  }
+                                }
+
+                                final ticket = await VentaService().crearReservaProbador(
+                                  ReservaProbadorPeticion(
+                                    idCliente: idCliente,
+                                    idSucursal: s.idSucursal,
+                                    horasVigencia: 2,
+                                    items: [
+                                      DetalleReservaItem(
+                                        idVariantePrenda: v.idVariantePrenda,
+                                        cantidad: 1,
+                                        precioUnitario: (v.precio as num).toDouble(),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (!ctx.mounted) return;
+                                Navigator.of(ctx).pop();
+
+                                if (!mounted) return;
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => TicketReservaScreen(ticketInicial: ticket),
+                                  ),
+                                );
+                              } catch (err) {
+                                setModalState(() {
+                                  enviando = false;
+                                  errorModal = err.toString();
+                                });
+                              }
+                            },
+                      child: enviando
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Text('Confirmar Reserva de Probador →'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _filaDetalleModal(String etiqueta, String valor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(etiqueta, style: const TextStyle(fontSize: 12, color: fsInkSoft)),
+        Text(valor, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
