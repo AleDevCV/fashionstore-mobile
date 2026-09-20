@@ -8,6 +8,7 @@ import '../../core/widgets.dart';
 import '../../services/auth_service.dart';
 import '../../services/catalogo_service.dart';
 import '../../services/venta_service.dart';
+import '../ar/vestidor_virtual_screen.dart';
 import '../reservas/ticket_reserva_screen.dart';
 
 /// Ficha de una prenda con su disponibilidad por sucursal (CU14).
@@ -131,6 +132,30 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
                   style: const TextStyle(color: fsInkSoft, height: 1.5),
                 ),
               ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.view_in_ar_rounded, color: fsEmerald),
+                  label: const Text(
+                    'Probar en Vestidor Virtual (AR)',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: fsInk),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: fsBorder, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VestidorVirtualScreen(prenda: p),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
