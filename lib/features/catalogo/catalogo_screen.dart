@@ -15,6 +15,9 @@ import '../inventario_monitoreo/estado_inventario_screen.dart';
 import '../login/login_screen.dart';
 import '../movimientos/movimientos_screen.dart';
 import '../proveedores/proveedores_screen.dart';
+import '../../core/models/venta_models.dart';
+import '../../services/carrito_service.dart';
+import '../carrito/carrito_screen.dart';
 
 /// Vitrina pública del catálogo (CU14).
 ///
@@ -315,6 +318,26 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
       appBar: AppBar(
         title: const Text('FashionStore'),
         actions: [
+          ListenableBuilder(
+            listenable: CarritoService.instance,
+            builder: (context, _) {
+              final count = CarritoService.instance.totalItems;
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: count > 0,
+                  label: Text('$count'),
+                  backgroundColor: fsInk,
+                  child: const Icon(Icons.shopping_bag_outlined),
+                ),
+                tooltip: 'Mi Carrito',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CarritoScreen()),
+                  );
+                },
+              );
+            },
+          ),
           if (_auth.autenticado)
             IconButton(
               icon: const Icon(Icons.logout),
@@ -454,6 +477,50 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                         badgeStock(p.stockTotal),
                       ],
                     ),
+                    if (p.stockTotal > 0 && p.variantes.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 28,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.add_shopping_cart, size: 13),
+                          label: const Text('Agregar', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            side: const BorderSide(color: fsBorder),
+                          ),
+                          onPressed: () {
+                            final v = p.variantes.first;
+                            CarritoService.instance.agregarItem(
+                              CarritoItem(
+                                idVariantePrenda: v.idVariantePrenda,
+                                skuVariante: p.sku,
+                                prendaNombre: p.nombre,
+                                talla: v.talla,
+                                color: v.color,
+                                precioUnitario: (v.precio as num).toDouble(),
+                              ),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${p.nombre} agregado al carrito'),
+                                duration: const Duration(seconds: 2),
+                                action: SnackBarAction(
+                                  label: 'Ver',
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const CarritoScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
