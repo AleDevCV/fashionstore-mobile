@@ -11,9 +11,11 @@ import '../../core/models/venta_models.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../services/auth_service.dart';
+import '../../services/carrito_service.dart';
 import '../../services/catalogo_service.dart';
 import '../../services/venta_service.dart';
 import '../ar/vestidor_virtual_screen.dart';
+import '../carrito/carrito_screen.dart';
 import '../ia/models/tryon_model.dart';
 import '../ia/services/ia_service.dart';
 import '../reservas/ticket_reserva_screen.dart';
@@ -44,6 +46,7 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
   late final IAService _iaService = widget.iaService ?? IAService();
 
   PrendaCatalogo? _prenda;
+  VarianteCatalogo? _varianteSeleccionada;
   bool _cargando = true;
   String? _error;
 
@@ -62,7 +65,12 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
     try {
       final prenda = await _servicio.obtenerFicha(widget.idPrenda);
       if (!mounted) return;
-      setState(() => _prenda = prenda);
+      setState(() {
+        _prenda = prenda;
+        if (prenda.variantes.isNotEmpty) {
+          _varianteSeleccionada = prenda.variantes.first;
+        }
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
@@ -77,7 +85,29 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_prenda?.nombre ?? 'Detalle de prenda')),
+      appBar: AppBar(
+        title: Text(_prenda?.nombre ?? 'Detalle de prenda'),
+        actions: [
+          AnimatedBuilder(
+            animation: CarritoService.instance,
+            builder: (context, _) {
+              final cant = CarritoService.instance.totalItems;
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: cant > 0,
+                  label: Text('$cant'),
+                  child: const Icon(Icons.shopping_bag_outlined),
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CarritoScreen()),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: _contenido(),
     );
   }
@@ -148,6 +178,34 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
                   style: const TextStyle(color: fsInkSoft, height: 1.5),
                 ),
               ],
+              if (p.sku.startsWith('3D-') || (p.descripcion != null && p.descripcion!.contains('[3D:'))) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1B4B),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFF6366F1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.view_in_ar_rounded, color: Color(0xFF818CF8), size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        p.descripcion?.contains('RIGGED: true') ?? false
+                            ? 'Malla 3D Articulada Rigged (Con Huesos)'
+                            : 'Modelo 3D Texturizado Real PBR',
+                        style: const TextStyle(
+                          color: Color(0xFFC7D2FE),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -170,16 +228,20 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.view_in_ar_rounded, color: fsEmerald),
-                  label: const Text(
-                    'Probar en Vestidor Virtual (AR)',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: fsInk),
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.view_in_ar_rounded, color: Colors.white, size: 20),
+                  label: Text(
+                    p.sku.startsWith('3D-')
+                        ? 'Probar Modelo 3D en Vestidor (AR)'
+                        : 'Probar en Vestidor Virtual (AR)',
+                    style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: fsBorder, width: 1.5),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: p.sku.startsWith('3D-') ? const Color(0xFF4F46E5) : fsEmerald,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 2,
                   ),
                   onPressed: () {
                     Navigator.push(
@@ -189,6 +251,104 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
                       ),
                     );
                   },
+                ),
+              ),
+              const SizedBox(height: 12),
+              // --- SELECTOR DE VARIANTE (TALLA Y COLOR) ---
+              if (p.variantes.isNotEmpty) ...[
+                DropdownButtonFormField<int>(
+                  initialValue: _varianteSeleccionada?.idVariantePrenda ?? p.variantes.first.idVariantePrenda,
+                  decoration: InputDecoration(
+                    labelText: 'Seleccionar Talla y Color',
+                    labelStyle: const TextStyle(fontSize: 13, color: fsInkMuted),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: fsBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: fsBorder),
+                    ),
+                  ),
+                  items: p.variantes.map((v) {
+                    final stock = v.stockTotal;
+                    final stockTxt = stock > 0 ? '($stock disp.)' : '(Agotado)';
+                    return DropdownMenuItem<int>(
+                      value: v.idVariantePrenda,
+                      child: Text(
+                        '${v.talla ?? 'U'} / ${v.color ?? 'Color'} - ${formatearPrecio(v.precio)} $stockTxt',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: stock > 0 ? fsInk : fsInkMuted,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _varianteSeleccionada = p.variantes.firstWhere((v) => v.idVariantePrenda == val);
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
+              // --- BOTÓN PRINCIPAL: AGREGAR AL CARRITO DE COMPRAS ---
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  key: const Key('btn_agregar_carrito_detalle'),
+                  icon: const Icon(Icons.add_shopping_cart_rounded, color: Colors.white, size: 20),
+                  label: Text(
+                    p.stockTotal > 0 ? 'Agregar al Carrito de Compras' : 'Prenda Agotada',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 0.3),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: p.stockTotal > 0 ? fsGold : fsInkMuted,
+                    foregroundColor: fsInk,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: p.stockTotal <= 0
+                      ? null
+                      : () {
+                          final v = _varianteSeleccionada ?? (p.variantes.isNotEmpty ? p.variantes.first : null);
+                          if (v == null) return;
+
+                          CarritoService.instance.agregarItem(
+                            CarritoItem(
+                              idVariantePrenda: v.idVariantePrenda,
+                              skuVariante: p.sku,
+                              prendaNombre: p.nombre,
+                              talla: v.talla,
+                              color: v.color,
+                              precioUnitario: (v.precio as num).toDouble(),
+                            ),
+                          );
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: fsInk,
+                              content: Text(
+                                '¡${p.nombre} (${v.talla ?? 'U'} / ${v.color ?? 'U'}) agregado al carrito!',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              duration: const Duration(seconds: 3),
+                              action: SnackBarAction(
+                                label: 'VER CARRITO',
+                                textColor: fsGold,
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const CarritoScreen()),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
                 ),
               ),
             ],

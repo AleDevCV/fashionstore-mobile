@@ -417,7 +417,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
           crossAxisCount: 2,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 0.6,
+          childAspectRatio: 0.54,
           children: _prendas.map(_tarjeta).toList(),
         ),
         const SizedBox(height: 8),
@@ -448,7 +448,48 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(aspectRatio: 3 / 4, child: redImagen(p.urlImagen)),
+            Stack(
+              children: [
+                AspectRatio(aspectRatio: 1.0, child: redImagen(p.urlImagen)),
+                if (p.sku.startsWith('3D-') || (p.descripcion != null && p.descripcion!.contains('[3D:')))
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A).withAlpha(220),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFF6366F1), width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            p.descripcion?.contains('RIGGED: true') ?? false
+                                ? Icons.bolt_rounded
+                                : Icons.view_in_ar_rounded,
+                            size: 10,
+                            color: const Color(0xFF818CF8),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            p.descripcion?.contains('RIGGED: true') ?? false
+                                ? 'RIGGED 3D'
+                                : '3D REAL',
+                            style: const TextStyle(
+                              color: Color(0xFFC7D2FE),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(10),

@@ -86,6 +86,13 @@ class DetalleReservaItem {
   }
 }
 
+double _parseNum(dynamic v) {
+  if (v == null) return 0.0;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? 0.0;
+  return 0.0;
+}
+
 /// Respuesta de reserva creada.
 class ReservaRespuesta {
   final int idReserva;
@@ -117,7 +124,31 @@ class ReservaRespuesta {
       fechaReserva: json['fecha_reserva'] as String,
       fechaLimite: json['fecha_limite'] as String,
       estado: json['estado'] as String,
-      total: (json['total'] as num).toDouble(),
+      total: _parseNum(json['total']),
+    );
+  }
+}
+
+/// Respuesta de sesión creada en Stripe Checkout (CU20).
+class StripeCheckoutRespuesta {
+  final String urlPago;
+  final String sessionId;
+  final int idReserva;
+  final double monto;
+
+  StripeCheckoutRespuesta({
+    required this.urlPago,
+    required this.sessionId,
+    required this.idReserva,
+    required this.monto,
+  });
+
+  factory StripeCheckoutRespuesta.fromJson(Map<String, dynamic> json) {
+    return StripeCheckoutRespuesta(
+      urlPago: json['url_pago'] as String,
+      sessionId: json['session_id'] as String,
+      idReserva: json['id_reserva'] as int,
+      monto: _parseNum(json['monto']),
     );
   }
 }
@@ -166,7 +197,7 @@ class QRGenerarRespuesta {
     return QRGenerarRespuesta(
       qrBase64: json['qr_base64'] as String,
       referencia: json['referencia'] as String,
-      monto: (json['monto'] as num).toDouble(),
+      monto: _parseNum(json['monto']),
       idReserva: json['id_reserva'] as int,
       expiraEnMinutos: (json['expira_en_minutos'] as num?)?.toInt() ?? 15,
     );

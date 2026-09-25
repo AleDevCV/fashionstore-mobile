@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/models/venta_models.dart';
 import '../../core/theme.dart';
@@ -28,6 +29,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   QRGenerarRespuesta? _qr;
   ComprobanteRespuesta? _comprobante;
   int? _idVentaConfirmada;
+  int? _idClienteResuelto;
 
   @override
   void initState() {
@@ -35,6 +37,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final auth = AuthService.instance;
     if (auth.nombreUsuario != null) {
       _razonCtrl.text = auth.nombreUsuario!;
+    }
+    _cargarDatosCliente();
+  }
+
+  Future<void> _cargarDatosCliente() async {
+    final cliente = await _ventaService.obtenerClientePropio();
+    if (cliente != null && mounted) {
+      setState(() {
+        if (cliente['id_cliente'] != null) {
+          _idClienteResuelto = (cliente['id_cliente'] as num).toInt();
+        }
+        if (cliente['ci'] != null && _nitCtrl.text.isEmpty) {
+          _nitCtrl.text = cliente['ci'].toString();
+        }
+        if (cliente['nombre_completo'] != null && (_razonCtrl.text.isEmpty || _razonCtrl.text == AuthService.instance.nombreUsuario)) {
+          _razonCtrl.text = cliente['nombre_completo'].toString();
+        }
+      });
     }
   }
 
@@ -46,6 +66,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   int _obtenerIdCliente() {
+    if (_idClienteResuelto != null) return _idClienteResuelto!;
     final claims = AuthService.instance.tokenClaims;
     if (claims != null) {
       if (claims['id_cliente'] != null) {
@@ -123,6 +144,110 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Future<void> _pagarConStripe() async {
+    final nit = _nitCtrl.text.trim();
+    final razon = _razonCtrl.text.trim();
+    if (nit.isEmpty || razon.isEmpty) {
+      setState(() => _error = 'Por favor completa tu NIT/CI y Razón Social.');
+      return;
+    }
+
+    final carrito = CarritoService.instance;
+    if (carrito.estaVacio) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+
+    try {
+      final idCliente = _obtenerIdCliente();
+
+      // 1. Crear Reserva (CU15)
+      final reserva = await _ventaService.crearReserva(
+        ReservaPeticion(
+          idCliente: idCliente,
+          idSucursal: 1, // Central
+          items: carrito.items
+              .map(
+                (i) => DetalleReservaItem(
+                  idVariantePrenda: i.idVariantePrenda,
+                  cantidad: i.cantidad,
+                  precioUnitario: i.precioUnitario,
+                ),
+              )
+              .toList(),
+        ),
+      );
+
+      // 2. Crear Sesión en Stripe Checkout (CU20)
+      final stripeRes = await _ventaService.crearSesionStripe(
+        idReserva: reserva.idReserva,
+        idCliente: idCliente,
+        nitCi: nit,
+        razonSocial: razon,
+      );
+
+      final uri = Uri.parse(stripeRes.urlPago);
+      final pudoAbrir = await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+      if (!mounted) return;
+      setState(() {
+        _reserva = reserva;
+        _cargando = false;
+      });
+
+      if (!pudoAbrir) {
+        setState(() => _error = 'No se pudo abrir la pasarela de Stripe en el navegador.');
+        return;
+      }
+
+      // Vaciar carrito ya que la reserva fue transferida a Stripe Checkout
+      CarritoService.instance.vaciarCarrito();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: fsEmerald),
+                SizedBox(width: 8),
+                Text('Stripe Checkout'),
+              ],
+            ),
+            content: Text(
+              'Se abrió la pasarela segura de Stripe para tu reserva #${reserva.idReserva}.\n\n'
+              'Completa el pago con tu tarjeta en la ventana abierta. Tu pedido se confirmará automáticamente en el sistema.',
+              style: const TextStyle(height: 1.4),
+            ),
+            actions: [
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: fsInk),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _cargando = false;
+      });
+    }
+  }
+
   Future<void> _confirmarPagoQR() async {
     final qr = _qr;
     final reserva = _reserva;
@@ -161,8 +286,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         // comprobante no bloquea la venta
       }
 
-      // Vaciar carrito
-      CarritoService.instance.vaciarCarrito();
+      // Limpiar los items comprados del carrito
+      if (ventaRes['items'] is List) {
+        CarritoService.instance.limpiarComprados(ventaRes['items'] as List);
+      } else {
+        CarritoService.instance.vaciarCarrito();
+      }
 
       if (!mounted) return;
       setState(() {
@@ -253,22 +382,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              // --- OPCIÓN 1: PAGAR CON TARJETA (STRIPE CHECKOUT) ---
               SizedBox(
-                height: 48,
-                child: FilledButton(
-                  onPressed: _cargando ? null : _crearReservaYGenerarQR,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: fsInk,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: _cargando
+                height: 50,
+                child: FilledButton.icon(
+                  key: const Key('btn_pago_stripe'),
+                  icon: const Icon(Icons.credit_card_rounded, color: Colors.white, size: 20),
+                  label: _cargando
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text('Continuar al Pago con QR →'),
+                      : const Text(
+                          'Pagar con Tarjeta (Stripe) →',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: fsInk,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: _cargando ? null : _pagarConStripe,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // --- OPCIÓN 2: PAGAR CON QR SIMPLE BOLIVIA ---
+              SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  key: const Key('btn_pago_qr'),
+                  icon: const Icon(Icons.qr_code_2_rounded, color: fsInk, size: 20),
+                  label: const Text(
+                    'Pagar con Código QR Simple',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: fsInk),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: fsBorder, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: _cargando ? null : _crearReservaYGenerarQR,
                 ),
               ),
             ],

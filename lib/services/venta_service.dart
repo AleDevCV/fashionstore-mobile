@@ -14,6 +14,16 @@ class VentaService {
               tokenProvider: () => AuthService.instance.token,
             );
 
+  /// Obtiene los datos de la ficha del cliente autenticado desde la sesión (/api/clientes/me).
+  Future<Map<String, dynamic>?> obtenerClientePropio() async {
+    try {
+      final res = await _api.get('/api/clientes/me');
+      return res as Map<String, dynamic>?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Crea una reserva que bloquea el stock de los productos (CU15).
   Future<ReservaRespuesta> crearReserva(ReservaPeticion peticion) async {
     final res = await _api.post('/api/ventas/reserva', body: peticion.toJson());
@@ -24,6 +34,28 @@ class VentaService {
   Future<QRGenerarRespuesta> generarQR(QRGenerarPeticion peticion) async {
     final res = await _api.post('/api/pagos/qr/generar', body: peticion.toJson());
     return QRGenerarRespuesta.fromJson(res as Map<String, dynamic>);
+  }
+
+  /// Crea una sesión de pago en Stripe Checkout (CU20).
+  Future<StripeCheckoutRespuesta> crearSesionStripe({
+    required int idReserva,
+    required int idCliente,
+    required String nitCi,
+    required String razonSocial,
+  }) async {
+    final res = await _api.post(
+      '/api/pagos/stripe/crear-sesion',
+      body: {
+        'id_reserva': idReserva,
+        'id_cliente': idCliente,
+        'url_exito': 'https://fashionstore.aledevcv.me/pago/exitoso',
+        'url_cancelacion': 'https://fashionstore.aledevcv.me/pago/cancelado',
+        'nit_ci': nitCi,
+        'razon_social': razonSocial,
+        'enviar_email': false,
+      },
+    );
+    return StripeCheckoutRespuesta.fromJson(res as Map<String, dynamic>);
   }
 
   /// Confirma el pago QR y consolida la venta descontando el stock (CU20).

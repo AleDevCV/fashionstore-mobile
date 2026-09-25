@@ -51,4 +51,24 @@ class CarritoService extends ChangeNotifier {
     _items.clear();
     notifyListeners();
   }
+
+  void limpiarComprados(List<dynamic> itemsComprados) {
+    for (final item in itemsComprados) {
+      final int idVariante = item is Map
+          ? (item['id_variante_prenda'] as num).toInt()
+          : (item.idVariantePrenda as num).toInt();
+      final int cant = item is Map
+          ? (item['cantidad'] as num).toInt()
+          : (item.cantidad as num).toInt();
+      final idx = _items.indexWhere((i) => i.idVariantePrenda == idVariante);
+      if (idx >= 0) {
+        if (_items[idx].cantidad <= cant) {
+          _items.removeAt(idx);
+        } else {
+          _items[idx].cantidad -= cant;
+        }
+      }
+    }
+    notifyListeners();
+  }
 }

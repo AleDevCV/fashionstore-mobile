@@ -10,8 +10,8 @@ library;
 ///   - Despliegue en la nube: https://api.fashionstore.example.com
 ///
 /// Puede sobrescribirse en tiempo de compilación con:
-///   flutter run --dart-define=API_BASE_URL=http://192.168.1.18:8000
+///   flutter run --dart-define=API_BASE_URL=http://192.168.1.9:8000
 const String apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://192.168.1.18:8000',
+  defaultValue: 'https://fashionstore.aledevcv.me',
 );
