@@ -11,11 +11,10 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   http: ^1.2.0
-  camera: ^0.12.1
-  google_mlkit_pose_detection: ^0.16.1
   image_picker: ^1.2.3
-  url_launcher: ^6.3.0
-
+  url_launcher: ^6.3.2
+  flutter_inappwebview: ^6.1.5
+  permission_handler: ^13.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

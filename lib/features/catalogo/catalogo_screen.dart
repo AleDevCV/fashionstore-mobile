@@ -10,6 +10,7 @@ import '../../services/auth_service.dart';
 import '../../services/catalogo_service.dart';
 import '../compras/compras_screen.dart';
 import '../detalle/prenda_detalle_screen.dart';
+import '../ar/vestidor_virtual_screen.dart';
 import '../ia/asistente_moda_screen.dart';
 import '../inventario_monitoreo/estado_inventario_screen.dart';
 import '../login/login_screen.dart';

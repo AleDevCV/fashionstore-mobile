@@ -1,0 +1,262 @@
+{
+  "android/app/build.gradle.kts": {
+    "mtime": 1790320226.7304306,
+    "ast_hash": "628dcf0ec8b09b445bbc3d68707c6a0d",
+    "semantic_hash": "628dcf0ec8b09b445bbc3d68707c6a0d"
+  },
+  "android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java": {
+    "mtime": 1790319699.7460682,
+    "ast_hash": "1b3cb24f32d49d78dcc3f1568bc6edaf",
+    "semantic_hash": "1b3cb24f32d49d78dcc3f1568bc6edaf"
+  },
+  "android/app/src/main/kotlin/com/fashionstore/fashionstore_mobile/MainActivity.kt": {
+    "mtime": 1790058321.921549,
+    "ast_hash": "5325a8d0023f3a83707e87c1fe553d35",
+    "semantic_hash": "5325a8d0023f3a83707e87c1fe553d35"
+  },
+  "android/build.gradle.kts": {
+    "mtime": 1790320299.3506062,
+    "ast_hash": "08dc61ef93fdfc75ec5448d7383dd7a6",
+    "semantic_hash": "08dc61ef93fdfc75ec5448d7383dd7a6"
+  },
+  "android/gradlew": {
+    "mtime": 1789889920.6174965,
+    "ast_hash": "7f1cd7eb3f75a1dc85cd37753972a6e2",
+    "semantic_hash": "7f1cd7eb3f75a1dc85cd37753972a6e2"
+  },
+  "android/settings.gradle.kts": {
+    "mtime": 1790058321.9434729,
+    "ast_hash": "a34513cd87cef855195771f6a457a218",
+    "semantic_hash": "a34513cd87cef855195771f6a457a218"
+  },
+  "lib/app.dart": {
+    "mtime": 1788661349.8926387,
+    "ast_hash": "b6f954a22bce540059832b44edba9a94",
+    "semantic_hash": "b6f954a22bce540059832b44edba9a94"
+  },
+  "lib/core/api_client.dart": {
+    "mtime": 1790058321.945471,
+    "ast_hash": "37633c28f18a90191817ee35a5dc0e86",
+    "semantic_hash": "37633c28f18a90191817ee35a5dc0e86"
+  },
+  "lib/core/config.dart": {
+    "mtime": 1790068005.801055,
+    "ast_hash": "e5a3516f95f5fe3102abaace98e8afce",
+    "semantic_hash": "e5a3516f95f5fe3102abaace98e8afce"
+  },
+  "lib/core/models/auth_models.dart": {
+    "mtime": 1790058321.949483,
+    "ast_hash": "83eb94c9af91f6dc180c276bef5dc56a",
+    "semantic_hash": "83eb94c9af91f6dc180c276bef5dc56a"
+  },
+  "lib/core/models/catalogo_models.dart": {
+    "mtime": 1788661349.8962648,
+    "ast_hash": "4f7197c0fea16c96da57dd5f0735059d",
+    "semantic_hash": "4f7197c0fea16c96da57dd5f0735059d"
+  },
+  "lib/core/models/venta_models.dart": {
+    "mtime": 1790069310.1245918,
+    "ast_hash": "4406802de01f65dfe6546661cf6afd04",
+    "semantic_hash": "4406802de01f65dfe6546661cf6afd04"
+  },
+  "lib/core/theme.dart": {
+    "mtime": 1790058321.952472,
+    "ast_hash": "1a18f192b9827cb1bfa6870763b8cf05",
+    "semantic_hash": "1a18f192b9827cb1bfa6870763b8cf05"
+  },
+  "lib/core/widgets.dart": {
+    "mtime": 1788661349.8982737,
+    "ast_hash": "c96b1e55b3a6b36e8b211ca9603b3ea9",
+    "semantic_hash": "c96b1e55b3a6b36e8b211ca9603b3ea9"
+  },
+  "lib/features/ar/vestidor_virtual_screen.dart": {
+    "mtime": 1790324225.0470595,
+    "ast_hash": "00eac065acad988fb746b8097a3949ad",
+    "semantic_hash": "00eac065acad988fb746b8097a3949ad"
+  },
+  "lib/features/auth/screens/nueva_password_screen.dart": {
+    "mtime": 1790058321.9601598,
+    "ast_hash": "10e59f97a206a5928d52accece058f1f",
+    "semantic_hash": "10e59f97a206a5928d52accece058f1f"
+  },
+  "lib/features/auth/screens/recuperar_password_screen.dart": {
+    "mtime": 1790058321.9611633,
+    "ast_hash": "e3b003bfce66550a28494831bc45e984",
+    "semantic_hash": "e3b003bfce66550a28494831bc45e984"
+  },
+  "lib/features/auth/services/auth_service.dart": {
+    "mtime": 1790058321.9637158,
+    "ast_hash": "9124a4a7c09261122e71a796b43bbc79",
+    "semantic_hash": "9124a4a7c09261122e71a796b43bbc79"
+  },
+  "lib/features/carrito/carrito_screen.dart": {
+    "mtime": 1790058321.965721,
+    "ast_hash": "e39b78e15f8510433fe564483d29d6ea",
+    "semantic_hash": "e39b78e15f8510433fe564483d29d6ea"
+  },
+  "lib/features/catalogo/catalogo_screen.dart": {
+    "mtime": 1790320926.8288293,
+    "ast_hash": "f5d95e916cd4b8bbf2d8a94ddfbaab2d",
+    "semantic_hash": "f5d95e916cd4b8bbf2d8a94ddfbaab2d"
+  },
+  "lib/features/checkout/checkout_screen.dart": {
+    "mtime": 1790069404.440154,
+    "ast_hash": "6e948fe3ad72ef42a6e2f205d1ef783d",
+    "semantic_hash": "6e948fe3ad72ef42a6e2f205d1ef783d"
+  },
+  "lib/features/compras/compra_detalle_screen.dart": {
+    "mtime": 1790058321.9702306,
+    "ast_hash": "9538918342a6d33ed164b452b0227568",
+    "semantic_hash": "9538918342a6d33ed164b452b0227568"
+  },
+  "lib/features/compras/compras_screen.dart": {
+    "mtime": 1790058321.9722548,
+    "ast_hash": "44abc1648b1fb615630c8044e795b483",
+    "semantic_hash": "44abc1648b1fb615630c8044e795b483"
+  },
+  "lib/features/compras/models/compra_models.dart": {
+    "mtime": 1790058321.974279,
+    "ast_hash": "ca14d4e613c8a7c5f15db6ef3addeab6",
+    "semantic_hash": "ca14d4e613c8a7c5f15db6ef3addeab6"
+  },
+  "lib/features/detalle/prenda_detalle_screen.dart": {
+    "mtime": 1790319888.7497697,
+    "ast_hash": "578d6fc42b1a0127a545d9320f9997fe",
+    "semantic_hash": "578d6fc42b1a0127a545d9320f9997fe"
+  },
+  "lib/features/ia/asistente_moda_screen.dart": {
+    "mtime": 1790058321.9782813,
+    "ast_hash": "66bec8d8188265aa174856ad341617fa",
+    "semantic_hash": "66bec8d8188265aa174856ad341617fa"
+  },
+  "lib/features/ia/models/recomendacion_ia_model.dart": {
+    "mtime": 1790058321.9812799,
+    "ast_hash": "37f1a9635de24e1422fec607dd4641b3",
+    "semantic_hash": "37f1a9635de24e1422fec607dd4641b3"
+  },
+  "lib/features/ia/models/tryon_model.dart": {
+    "mtime": 1790058321.9822812,
+    "ast_hash": "f19269e8f4f71e4d9520573a3502fb3e",
+    "semantic_hash": "f19269e8f4f71e4d9520573a3502fb3e"
+  },
+  "lib/features/ia/services/ia_service.dart": {
+    "mtime": 1790058321.9833784,
+    "ast_hash": "50bc8c97d0c8c57cf63c58b25780bc11",
+    "semantic_hash": "50bc8c97d0c8c57cf63c58b25780bc11"
+  },
+  "lib/features/inventario_monitoreo/estado_inventario_screen.dart": {
+    "mtime": 1790058321.9859881,
+    "ast_hash": "16231e428ae1c9802161b611509f4c96",
+    "semantic_hash": "16231e428ae1c9802161b611509f4c96"
+  },
+  "lib/features/inventario_monitoreo/models/inventario_monitoreo_models.dart": {
+    "mtime": 1790058321.9879956,
+    "ast_hash": "0b7c2811853ad2e3588ba8666b496ba9",
+    "semantic_hash": "0b7c2811853ad2e3588ba8666b496ba9"
+  },
+  "lib/features/login/login_screen.dart": {
+    "mtime": 1790058321.989995,
+    "ast_hash": "136fadbc7ddf819e66b27a64681b95c5",
+    "semantic_hash": "136fadbc7ddf819e66b27a64681b95c5"
+  },
+  "lib/features/movimientos/models/movimiento_models.dart": {
+    "mtime": 1790058321.9925027,
+    "ast_hash": "0a156709cd33cc66fcefbba389b465f4",
+    "semantic_hash": "0a156709cd33cc66fcefbba389b465f4"
+  },
+  "lib/features/movimientos/movimientos_screen.dart": {
+    "mtime": 1790058321.9935086,
+    "ast_hash": "2b7e78495415f283765c1401b8e2fab5",
+    "semantic_hash": "2b7e78495415f283765c1401b8e2fab5"
+  },
+  "lib/features/movimientos/registrar_movimiento_screen.dart": {
+    "mtime": 1790058321.9955113,
+    "ast_hash": "294026bf40125c162f3d2b7ebde47aa0",
+    "semantic_hash": "294026bf40125c162f3d2b7ebde47aa0"
+  },
+  "lib/features/proveedores/models/proveedor_models.dart": {
+    "mtime": 1790058321.9975083,
+    "ast_hash": "d2547aec687f622d5da16b13cde953c7",
+    "semantic_hash": "d2547aec687f622d5da16b13cde953c7"
+  },
+  "lib/features/proveedores/proveedores_screen.dart": {
+    "mtime": 1790058321.9985077,
+    "ast_hash": "9f5f7d568ce042ebb630600d56b1c5cc",
+    "semantic_hash": "9f5f7d568ce042ebb630600d56b1c5cc"
+  },
+  "lib/features/reservas/ticket_reserva_screen.dart": {
+    "mtime": 1790058321.999514,
+    "ast_hash": "dd54105d4f1c2895ec61306e1ed28056",
+    "semantic_hash": "dd54105d4f1c2895ec61306e1ed28056"
+  },
+  "lib/features/splash/splash_screen.dart": {
+    "mtime": 1790058322.0015132,
+    "ast_hash": "c39ae249a00b889085e1fe50ad1b84e4",
+    "semantic_hash": "c39ae249a00b889085e1fe50ad1b84e4"
+  },
+  "lib/main.dart": {
+    "mtime": 1788661349.903299,
+    "ast_hash": "3f6be27a1c6585cac83781d9148b7af5",
+    "semantic_hash": "3f6be27a1c6585cac83781d9148b7af5"
+  },
+  "lib/services/auth_service.dart": {
+    "mtime": 1790058322.0037332,
+    "ast_hash": "6f80783939f706d201608ad364fdfc5c",
+    "semantic_hash": "6f80783939f706d201608ad364fdfc5c"
+  },
+  "lib/services/carrito_service.dart": {
+    "mtime": 1790059923.690703,
+    "ast_hash": "dd4003e2d3a8b25b4101f4e595bd01b4",
+    "semantic_hash": "dd4003e2d3a8b25b4101f4e595bd01b4"
+  },
+  "lib/services/catalogo_service.dart": {
+    "mtime": 1788661349.9052265,
+    "ast_hash": "ffddd820fd9bfce19e939f06274f45ea",
+    "semantic_hash": "ffddd820fd9bfce19e939f06274f45ea"
+  },
+  "lib/services/compra_service.dart": {
+    "mtime": 1790058322.0057344,
+    "ast_hash": "728f7df5bd070c8e688a2b935d9d6c77",
+    "semantic_hash": "728f7df5bd070c8e688a2b935d9d6c77"
+  },
+  "lib/services/inventario_monitoreo_service.dart": {
+    "mtime": 1790058322.006732,
+    "ast_hash": "6c24de05384fa2e4ac3a9d0b4dead1ea",
+    "semantic_hash": "6c24de05384fa2e4ac3a9d0b4dead1ea"
+  },
+  "lib/services/movimiento_service.dart": {
+    "mtime": 1790058322.0077343,
+    "ast_hash": "484f93a4543309f2b030de4944ac59a0",
+    "semantic_hash": "484f93a4543309f2b030de4944ac59a0"
+  },
+  "lib/services/proveedor_service.dart": {
+    "mtime": 1790058322.0092402,
+    "ast_hash": "2c7ae7053b28dd28adc0e00a98054358",
+    "semantic_hash": "2c7ae7053b28dd28adc0e00a98054358"
+  },
+  "lib/services/venta_service.dart": {
+    "mtime": 1790069322.1072485,
+    "ast_hash": "4bbb82b1631389d20b59ed312c7d97d8",
+    "semantic_hash": "4bbb82b1631389d20b59ed312c7d97d8"
+  },
+  "test/auth_recovery_test.dart": {
+    "mtime": 1790058322.014773,
+    "ast_hash": "1cfd85040ae8a8227640016219270214",
+    "semantic_hash": "1cfd85040ae8a8227640016219270214"
+  },
+  "test/inventario_monitoreo_test.dart": {
+    "mtime": 1790058322.0162783,
+    "ast_hash": "f3b06eccc08f6256be2ad0c817796fe3",
+    "semantic_hash": "f3b06eccc08f6256be2ad0c817796fe3"
+  },
+  "test/tryon_fotorealista_test.dart": {
+    "mtime": 1790058322.019288,
+    "ast_hash": "f5a6cd414bb03a567984dbae5a7294ce",
+    "semantic_hash": "f5a6cd414bb03a567984dbae5a7294ce"
+  },
+  "test/warehouse_features_test.dart": {
+    "mtime": 1790058322.0212853,
+    "ast_hash": "aa3b00c09a589a7bf782fee77668a392",
+    "semantic_hash": "aa3b00c09a589a7bf782fee77668a392"
+  }
+}

@@ -229,15 +229,13 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.view_in_ar_rounded, color: Colors.white, size: 20),
-                  label: Text(
-                    p.sku.startsWith('3D-')
-                        ? 'Probar Modelo 3D en Vestidor (AR)'
-                        : 'Probar en Vestidor Virtual (AR)',
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                  icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                  label: const Text(
+                    '✨ Probador Fotorealista (IA)',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: p.sku.startsWith('3D-') ? const Color(0xFF4F46E5) : fsEmerald,
+                    backgroundColor: const Color(0xFF6B21A8), // A nice purple matching web IA button
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -247,7 +245,7 @@ class _PrendaDetalleScreenState extends State<PrendaDetalleScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => VestidorVirtualScreen(prenda: p),
+                        builder: (_) => VestidorVirtualScreen(prendaId: p.idPrenda.toString()),
                       ),
                     );
                   },
