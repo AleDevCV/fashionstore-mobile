@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/models/venta_models.dart';
 import '../../core/theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/carrito_service.dart';
 import '../../services/venta_service.dart';
+import 'stripe_webview_screen.dart';
 
 /// Pantalla móvil de Checkout digital, Pasarela de Pagos QR y Facturación (CU15, CU20, CU21).
 class CheckoutScreen extends StatefulWidget {
@@ -191,8 +191,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         razonSocial: razon,
       );
 
-      final uri = Uri.parse(stripeRes.urlPago);
-      final pudoAbrir = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // Abrir la pasarela dentro de la app
+      final bool? pagoExitoso = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (ctx) => StripeWebviewScreen(checkoutUrl: stripeRes.urlPago),
+        ),
+      );
 
       if (!mounted) return;
       setState(() {
@@ -200,44 +204,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _cargando = false;
       });
 
-      if (!pudoAbrir) {
-        setState(() => _error = 'No se pudo abrir la pasarela de Stripe en el navegador.');
-        return;
-      }
-
-      // Vaciar carrito ya que la reserva fue transferida a Stripe Checkout
-      CarritoService.instance.vaciarCarrito();
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: fsEmerald),
-                SizedBox(width: 8),
-                Text('Stripe Checkout'),
+      if (pagoExitoso == true) {
+        // Recién aquí vaciamos el carrito (pago confirmado por Stripe success URL)
+        CarritoService.instance.vaciarCarrito();
+        
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: fsEmerald),
+                  SizedBox(width: 8),
+                  Text('Pago Confirmado'),
+                ],
+              ),
+              content: Text(
+                'Tu pago ha sido procesado exitosamente por Stripe.\n\n'
+                'Tu pedido #${reserva.idReserva} está confirmado y te llegará un correo con la factura digital.',
+                style: const TextStyle(height: 1.4),
+              ),
+              actions: [
+                FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: fsInk),
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Entendido'),
+                ),
               ],
             ),
-            content: Text(
-              'Se abrió la pasarela segura de Stripe para tu reserva #${reserva.idReserva}.\n\n'
-              'Completa el pago con tu tarjeta en la ventana abierta. Tu pedido se confirmará automáticamente en el sistema.',
-              style: const TextStyle(height: 1.4),
-            ),
-            actions: [
-              FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: fsInk),
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Entendido'),
-              ),
-            ],
-          ),
-        );
+          );
+        }
+      } else {
+        // El usuario canceló o el pago falló
+        setState(() => _error = 'El pago fue cancelado o no se completó.');
       }
     } catch (e) {
       if (!mounted) return;
